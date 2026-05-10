@@ -1,5 +1,5 @@
 {
-  "name": "thinking-patterns",
+  "name": "@ajitkumarpandit/llm-thinking-patterns-nakprc",
   "version": "1.0.0",
   "description": "Generate sequential thinking pattern files to study and learn AI reasoning patterns",
   "type": "module",
