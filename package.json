@@ -1,0 +1,32 @@
+{
+  "name": "thinking-patterns",
+  "version": "1.0.0",
+  "description": "Generate sequential thinking pattern files to study and learn AI reasoning patterns",
+  "type": "module",
+  "bin": {
+    "thinking-patterns": "./bin/thinking-patterns.mjs"
+  },
+  "exports": {
+    ".": "./src/config.js"
+  },
+  "scripts": {
+    "start": "node bin/thinking-patterns.mjs",
+    "generate": "node bin/thinking-patterns.mjs generate",
+    "analyze": "node bin/thinking-patterns.mjs analyze",
+    "list-patterns": "node bin/thinking-patterns.mjs list-patterns",
+    "demo": "node bin/thinking-patterns.mjs generate --sample"
+  },
+  "keywords": [
+    "thinking-patterns",
+    "ai-reasoning",
+    "chain-of-thought",
+    "ai-patterns",
+    "prompt-engineering",
+    "cli-tool"
+  ],
+  "license": "MIT",
+  "author": "",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
