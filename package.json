@@ -14,7 +14,11 @@
     "generate": "node bin/thinking-patterns.mjs generate",
     "analyze": "node bin/thinking-patterns.mjs analyze",
     "list-patterns": "node bin/thinking-patterns.mjs list-patterns",
-    "demo": "node bin/thinking-patterns.mjs generate --sample"
+    "demo": "node bin/thinking-patterns.mjs generate --sample",
+    "mcp": "node mcp-server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "keywords": [
     "thinking-patterns",

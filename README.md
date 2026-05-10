@@ -35,7 +35,7 @@ thinking-patterns/
 
 ## Configuration
 
-Everything is controlled by `thinkingpatterns.n.config.js`:
+Everything is controlled by `thinkingpatterns.nakprc.config.js`:
 
 ```js
 export default {
@@ -96,6 +96,46 @@ export default {
 - **reverse_engineer** — Extract and expose thinking steps hidden in any AI response
 - **guided** — Structured scientific reasoning (observe → question → hypothesize → test → learn)
 - **custom** — Define your own thinking steps
+
+## MCP Server (for LLMs)
+
+Connect this to any MCP-compatible client (Claude Desktop, Cursor, Windsurf, etc.) so LLMs can automatically generate thinking patterns.
+
+**Add to your MCP config:**
+
+```json
+{
+  "mcpServers": {
+    "thinking-patterns": {
+      "command": "node",
+      "args": ["/path/to/thinking-patterns/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+**Tools exposed to connected LLMs:**
+
+| Tool | Description |
+|------|-------|
+| `generate_thinking_patterns` | Generate sequential files (1think.md, 2think.md...) for any topic |
+| `analyze_ai_response` | Reverse-engineer thinking from any AI response text |
+| `list_patterns` | List all available thinking patterns |
+| `view_thinking_files` | List all generated thinking files |
+| `get_thinking_file` | View content of a specific thinking file |
+| `get_config` | Show current configuration |
+
+**Claude Desktop setup example:**
+```json
+{
+  "mcpServers": {
+    "thinking-patterns": {
+      "command": "node",
+      "args": ["/Users/you/thinking-patterns/mcp-server.mjs"]
+    }
+  }
+}
+```
 
 ## Research
 

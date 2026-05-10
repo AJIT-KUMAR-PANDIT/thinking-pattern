@@ -86,7 +86,7 @@ async function loadConfig(configPath) {
   if (configPath) {
     try { userConfig = parseConfig(readFileSync(configPath, 'utf8')) } catch { /* use defaults */ }
   } else {
-    try { userConfig = parseConfig(readFileSync(join(root, 'thinkingpatterns.n.config.js'), 'utf8')) } catch { /* use defaults */ }
+    try { userConfig = parseConfig(readFileSync(join(root, 'thinkingpatterns.nakprc.config.js'), 'utf8')) } catch { /* use defaults */ }
   }
 
   // Deep merge
@@ -405,7 +405,7 @@ Usage:
   thinking-patterns help                      Show this help
 
 Options:
-  --config <path>   Path to config file (default: ./thinkingpatterns.n.config.js)
+  --config <path>   Path to config file (default: ./thinkingpatterns.nakprc.config.js)
   --pattern <name>  Override default pattern
 
 Patterns:
