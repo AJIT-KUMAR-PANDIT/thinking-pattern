@@ -22,6 +22,18 @@ We propose making AI reasoning visible through **sequential analysis** — decom
 2. **Enables study**: Creates artifacts that can be analyzed, compared, and taught
 3. **Supports learning**: Helps users understand how AI approaches different problems
 4. **Democratizes**: Open-source tool makes this accessible to everyone
+5. **Plugs and plays**: One-command setup for any MCP-compatible LLM
+
+### 1.3 Theoretical Foundation
+
+### 1.2 Our Approach
+
+We propose making AI reasoning visible through **sequential analysis** — decomposing AI responses into discrete thinking steps, each captured as a structured artifact. This approach:
+
+1. **Reveals structure**: Makes explicit the implicit reasoning chains in AI responses
+2. **Enables study**: Creates artifacts that can be analyzed, compared, and taught
+3. **Supports learning**: Helps users understand how AI approaches different problems
+4. **Democratizes**: Open-source tool makes this accessible to everyone
 
 ### 1.3 Theoretical Foundation
 
@@ -235,11 +247,13 @@ Understanding AI reasoning patterns enables:
 
 ### 6.1 Design Philosophy
 
-The `thinking-patterns` tool is designed around three principles:
+The `thinking-patterns` tool (nakprc edition) is designed around five principles:
 
-1. **Configurability**: Every aspect controlled by a single `thinkingpatterns.nakprc.config.js` file
-2. **Extensibility**: New patterns added by defining new step sequences
+1. **Configurability**: Every aspect controlled by `thinkingpatterns.nakprc.config.js`
+2. **Extensibility**: New patterns added by configuration, not code modification
 3. **Simplicity**: Generate files, study them, learn
+4. **Plug-and-play**: One-command setup for Claude Code, Claude Desktop, Cursor, Windsurf
+5. **Dynamic output**: Output directory derived from topic name (sanitized slug)
 
 ### 6.2 Architecture
 
@@ -249,11 +263,20 @@ thinking-patterns/
 ├── mcp-server.mjs              MCP server (tools for LLMs)
 ├── src/
 │   ├── config.js               Config loader & defaults
+│   ├── generator.js            File generator with dynamic output dir
 │   ├── patterns/               Thinking pattern definitions
 │   └── templates/              Markdown templates
 ├── thinkingpatterns.nakprc.config.js  User configuration
 ├── examples/                   Usage examples
 ├── research/                   Research paper
+├── .nakprc/                    Plug-and-play extensions
+│   ├── skills/tp.nakprc.md     Claude Code skill
+│   ├── claude-desktop/         MCP config for Claude Desktop
+│   ├── cursor/                 MCP config for Cursor
+│   ├── windsurf/               MCP config for Windsurf
+│   └── installers/tp-setup.mjs Auto-detector
+├── docs/                       Per-step documentation
+├── package.json
 └── README.md
 ```
 
@@ -262,15 +285,34 @@ thinking-patterns/
 The MCP server exposes six tools to connected LLMs:
 
 | Tool | Purpose |
-|------|--------|
-| `generate_thinking_patterns` | Generate sequential files for any topic |
-| `analyze_ai_response` | Reverse-engineer thinking from AI text |
+|------|--|
+| `generate_thinking_patterns` | Generate sequential files (1think.md, 2think.md...) for any topic |
+| `analyze_ai_response` | Reverse-engineer thinking from AI response text |
 | `list_patterns` | List available thinking patterns |
 | `view_thinking_files` | List all generated files |
 | `get_thinking_file` | View a specific file's content |
 | `get_config` | Show current configuration |
 
-### 6.4 Configurable File Extension
+### 6.4 Dynamic Output Directory
+
+By default, the output directory is derived from the topic name (sanitized slug):
+
+| Topic | Output Directory |
+|-------|-----|
+| "machine learning" | `./machine-learning/` |
+| "debug memory leak" | `./debug-memory-leak/` |
+
+Override with `config.output.dir` for a fixed directory.
+
+### 6.5 File Naming Modes
+
+| Mode | Example |
+|------|---|
+| `numbered` (default) | `1think.md`, `2think.md`, `3think.md` |
+| `named` | `think-context.md`, `think-analysis.md` |
+| `datetime` | `think-2026-05-11T10-00-00-context.md` |
+
+### 6.6 Configurable File Extension
 
 Output files support any extension (`.md`, `.think`, `.txt`):
 
@@ -329,15 +371,24 @@ This work contributes:
 
 ### 8.3 Availability
 
-The `thinking-patterns` CLI tool and MCP server are open-source and available at:
-https://github.com/nakprc/thinking-patterns
+The `thinking-patterns` CLI tool and MCP server are open-source and available via npm:
+
+```bash
+npm i llm-thinking-patterns-nakprc
+```
 
 ```bash
 # Use via CLI
 npx thinking-patterns generate "your topic here"
 
 # Use via MCP server (in Claude Desktop, Cursor, etc.)
-# Add mcp-server.mjs to your MCP configuration
+# Auto-detect your IDE and configure
+npx tp-setup auto
+
+# Or use manual setup
+npx tp-setup claude-desktop
+npx tp-setup cursor
+npx tp-setup windsurf
 ```
 
 ---

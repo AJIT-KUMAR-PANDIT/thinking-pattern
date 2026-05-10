@@ -1,10 +1,11 @@
 {
   "name": "llm-thinking-patterns-nakprc",
   "version": "1.1.0",
-  "description": "Generate sequential thinking pattern files to study and learn AI reasoning patterns",
+  "description": "Generate sequential thinking pattern files to study and learn AI reasoning. Plug-and-play extension for Claude Code, Claude Desktop, Cursor, Windsurf, and any MCP-compatible LLM.",
   "type": "module",
   "bin": {
-    "thinking-patterns": "./bin/thinking-patterns.mjs"
+    "thinking-patterns": "./bin/thinking-patterns.mjs",
+    "tp-setup": "./.nakprc/installers/tp-setup.mjs"
   },
   "exports": {
     ".": "./src/config.js"
@@ -14,8 +15,10 @@
     "generate": "node bin/thinking-patterns.mjs generate",
     "analyze": "node bin/thinking-patterns.mjs analyze",
     "list-patterns": "node bin/thinking-patterns.mjs list-patterns",
+    "config": "node bin/thinking-patterns.mjs config",
     "demo": "node bin/thinking-patterns.mjs generate --sample",
-    "mcp": "node mcp-server.mjs"
+    "mcp": "node mcp-server.mjs",
+    "setup": "node .nakprc/installers/tp-setup.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"
@@ -26,10 +29,13 @@
     "chain-of-thought",
     "ai-patterns",
     "prompt-engineering",
-    "cli-tool"
+    "cli-tool",
+    "mcp-server",
+    "nakprc",
+    "plug-and-play"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "nakprc",
   "engines": {
     "node": ">=18.0.0"
   }

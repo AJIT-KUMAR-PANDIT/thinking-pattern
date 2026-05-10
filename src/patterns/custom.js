@@ -1,5 +1,6 @@
 /**
  * Custom pattern — user-defined thinking steps.
+ * Part of thinking-patterns — nakprc edition.
  */
 
 export function extractThinkingSteps(response, config) {

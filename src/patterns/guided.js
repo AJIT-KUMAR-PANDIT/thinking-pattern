@@ -1,5 +1,6 @@
 /**
  * Guided thinking pattern — structured scientific reasoning.
+ * Part of thinking-patterns — nakprc edition.
  */
 
 export function extractThinkingSteps(response, config) {
@@ -16,10 +17,10 @@ export function extractThinkingSteps(response, config) {
 function guidedContent(step, i, total) {
   const contents = {
     observe: `Looking at this problem carefully, several things stand out. The most notable observation is the structure of the problem itself — it has layers that require peeling back one at a time.`,
-    question: `From these observations, critical questions emerge. The most pressing is: what assumptions underlie our current understanding? This question cuts to the heart of the problem.`,
-    hypothesize: `Guided by our questions, several hypotheses emerge. The leading hypothesis suggests that the core mechanism operates through... Alternative hypotheses propose...`,
-    test: `To evaluate these hypotheses, we need concrete tests. The strongest approach would examine... A secondary test could investigate... Each test targets a different aspect of the hypothesis.`,
-    learn: `Through this process, several lessons emerge. The primary insight is that the problem is fundamentally about... This changes how we approach similar problems. Key implications include...`,
+    question: `From these observations, critical questions emerge. The most pressing is: what assumptions underlie our current understanding?`,
+    hypothesize: `Guided by our questions, several hypotheses emerge. The leading hypothesis suggests that the core mechanism operates through...`,
+    test: `To evaluate these hypotheses, we need concrete tests. The strongest approach would examine... A secondary test could investigate...`,
+    learn: `Through this process, several lessons emerge. The primary insight is that the problem is fundamentally about...`,
   }
   return contents[step.id] || `Thinking through this step systematically.`
 }

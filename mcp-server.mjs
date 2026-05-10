@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * thinking-patterns MCP Server
+ * thinking-patterns MCP Server — nakprc edition
  * Exposes thinking pattern generation as MCP tools.
  */
 
@@ -16,11 +16,11 @@ import { dirname } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-// ── Config ────
+// ── Config ──
 
 function loadConfig() {
   const defaultConfig = {
-    output: { dir: "./thinking-patterns", filePrefix: "think", naming: "numbered", fileExtension: "md" },
+    output: { dir: null, filePrefix: "think", naming: "numbered", fileExtension: "md" },
     defaultPattern: "reverse_engineer",
     patterns: {
       reverse_engineer: {
@@ -63,13 +63,25 @@ function loadConfig() {
     userConfig = new Function("return (" + code + ")")();
   } catch {}
 
-  // Merge
   const merged = {
     output: { ...defaultConfig.output, ...(userConfig.output || {}) },
     defaultPattern: userConfig.defaultPattern || defaultConfig.defaultPattern,
     patterns: { ...defaultConfig.patterns, ...(userConfig.patterns || {}) },
   };
   return merged;
+}
+
+function topicToSlug(topic) {
+  return topic
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "thinking";
+}
+
+function resolveOutputDir(config, topic) {
+  if (config.output?.dir) return config.output.dir;
+  return `./${topicToSlug(topic)}`;
 }
 
 // ── Core logic ──
@@ -97,35 +109,17 @@ function describeAIAction(stepId) {
 
 function generateStepContent(stepId, topic, index, total) {
   const templates = {
-    context: [
-      `To understand ${topic}, we first need to establish the problem space. The core challenge here is balancing clarity with depth.`,
-    ],
-    analysis: [
-      `Breaking down ${topic}, several key dimensions emerge. We need to understand the foundational concepts, examine practical implications, and consider limitations.`,
-    ],
-    synthesis: [
-      `Bringing these observations together about ${topic}, a clearer picture emerges. Key patterns suggest interconnected underlying structure.`,
-    ],
-    conclusion: [
-      `Our exploration of ${topic} reveals key insights. The most important finding is that understanding requires looking beyond surface observations.`,
-    ],
-    observe: [
-      `Looking carefully at ${topic}, several things stand out. The most notable observation is the complexity hidden beneath apparent simplicity.`,
-    ],
-    question: [
-      `From our observations about ${topic}, critical questions emerge. What assumptions are we making? What are we missing?`,
-    ],
-    hypothesize: [
-      `Guided by our questions, several hypotheses about ${topic} emerge. The leading one suggests layered reasoning underlies the phenomenon.`,
-    ],
-    test: [
-      `To evaluate these hypotheses about ${topic}, we need concrete tests. The strongest approach examines the prediction most likely to fail.`,
-    ],
-    learn: [
-      `Through this process with ${topic}, the key insight is that rigorous thinking requires disciplined attention to each reasoning step.`,
-    ],
+    context: [`To understand ${topic}, we first need to establish the problem space.`],
+    analysis: [`Breaking down ${topic}, several key dimensions emerge.`],
+    synthesis: [`Bringing these observations together about ${topic}, a clearer picture emerges.`],
+    conclusion: [`Our exploration of ${topic} reveals key insights.`],
+    observe: [`Looking carefully at ${topic}, several things stand out.`],
+    question: [`From our observations about ${topic}, critical questions emerge.`],
+    hypothesize: [`Guided by our questions, several hypotheses about ${topic} emerge.`],
+    test: [`To evaluate these hypotheses about ${topic}, we need concrete tests.`],
+    learn: [`Through this process with ${topic}, the key insight is that rigorous thinking requires disciplined attention.`],
   };
-  const t = templates[stepId] || [`${stepId} step for ${topic}: structured reasoning applied.`];
+  const t = templates[stepId] || [`${stepId} step for ${topic}: structured reasoning.`];
   return t[index % t.length];
 }
 
@@ -139,7 +133,7 @@ function findKeyInsight(topic) {
 
 function generateFiles(steps, pattern, topic) {
   const config = loadConfig();
-  const outputDir = config.output.dir;
+  const outputDir = resolveOutputDir(config, topic);
   const filePrefix = config.output.filePrefix;
   const naming = config.output.naming;
   const ext = config.output.fileExtension || "md";
@@ -192,10 +186,9 @@ ${step.content}
     files.push({ path: filePath, name: fileName, step: step.label, stepNumber: i + 1 });
   }
 
-  // Index
-  const indexContent = `# Thinking Patterns\n\nTopic: ${topic}\nGenerated: ${new Date().toISOString()}\nPattern: ${pattern.label}\nSteps: ${steps.length}\n\n## Files\n\n` +
+  const indexContent = `# Thinking Patterns: ${topic}\n\nGenerated: ${new Date().toISOString()}\nPattern: ${pattern.label}\nOutput: ${outputDir}\nSteps: ${steps.length}\n\n## Files\n\n` +
     files.filter((f) => f.stepNumber > 0).map((f) => `- [${f.name}](./${f.name}) — Step ${f.stepNumber}: ${f.step}`).join("\n") +
-    `\n\n---\n*Generated by thinking-patterns MCP*\n`;
+    `\n\n---\n*Generated by thinking-patterns MCP (nakprc)*\n`;
   writeFileSync(join(outputDir, `index.${ext}`), indexContent, "utf8");
 
   return files;
@@ -204,7 +197,7 @@ ${step.content}
 // ── MCP Server ──
 
 const server = new McpServer(
-  { name: "thinking-patterns", version: "1.0.0" },
+  { name: "thinking-patterns-nakprc", version: "1.1.0" },
   {
     capabilities: {
       tools: {},
@@ -212,29 +205,20 @@ const server = new McpServer(
   },
 );
 
-// Tool: generate_thinking_patterns
 server.tool(
   "generate_thinking_patterns",
-  "Generate sequential thinking pattern files (1think.md, 2think.md, etc.) for a given topic or prompt. Makes AI reasoning visible and study-able.",
+  "Generate sequential thinking pattern files (1think.md, 2think.md, etc.) for a given topic or prompt. The output directory is dynamic — derived from the topic name. Makes AI reasoning visible and study-able.",
   {
     topic: z.string().describe("The topic or question to generate thinking patterns for"),
-    pattern: z
-      .string()
-      .optional()
-      .describe("Pattern name: reverse_engineer, guided, or custom (defaults to configured default)"),
+    pattern: z.string().optional().describe("Pattern name: reverse_engineer, guided, or custom"),
   },
   async ({ topic, pattern }) => {
     const config = loadConfig();
     const patternName = pattern || config.defaultPattern;
     const patternDef = config.patterns[patternName];
-
     if (!patternDef) {
-      return {
-        content: [{ type: "text", text: `Error: pattern "${patternName}" not found.` }],
-        isError: true,
-      };
+      return { content: [{ type: "text", text: `Error: pattern "${patternName}" not found.` }], isError: true };
     }
-
     const steps = patternDef.steps.map((step) => ({
       ...step,
       whatDone: describeAIAction(step.id),
@@ -242,46 +226,30 @@ server.tool(
       keyInsight: findKeyInsight(topic),
       content: generateStepContent(step.id, topic, patternDef.steps.indexOf(step), patternDef.steps.length),
     }));
-
     const files = generateFiles(steps, patternDef, topic);
-
     return {
-      content: [
-        {
-          type: "text",
-          text: `Generated ${files.filter((f) => f.stepNumber > 0).length} thinking pattern files for "${topic}":\n\n${files
-            .filter((f) => f.stepNumber > 0)
-            .map((f) => `✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`)
-            .join("\n")}\n\nOutput directory: ${config.output.dir}`,
-        },
-      ],
+      content: [{
+        type: "text",
+        text: `Generated ${files.filter((f) => f.stepNumber > 0).length} thinking pattern files for "${topic}":\n\n${files.filter((f) => f.stepNumber > 0).map((f) => `✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`).join("\n")}\n\nOutput directory: ${files[0]?.path?.replace(files[0].name, '') || config.output.dir}`,
+      }],
     };
   },
 );
 
-// Tool: analyze_ai_response
 server.tool(
   "analyze_ai_response",
   "Analyze an AI response text and extract the hidden thinking patterns into sequential files.",
   {
     response: z.string().describe("The full AI response text to analyze"),
-    pattern: z
-      .string()
-      .optional()
-      .describe("Pattern to use for structuring the analysis"),
+    pattern: z.string().optional().describe("Pattern to use for structuring the analysis"),
   },
   async ({ response, pattern }) => {
     const config = loadConfig();
     const patternName = pattern || config.defaultPattern;
     const patternDef = config.patterns[patternName];
-
     if (!patternDef) {
-      return {
-        content: [{ type: "text", text: `Error: pattern "${patternName}" not found.` }],
-        isError: true,
-      };
+      return { content: [{ type: "text", text: `Error: pattern "${patternName}" not found.` }], isError: true };
     }
-
     const sections = response.split(/\n\n+/).filter((s) => s.trim());
     const analysisTopic = sections[0]?.slice(0, 80) || "the response";
     const steps = patternDef.steps.map((step, i) => ({
@@ -291,24 +259,16 @@ server.tool(
       keyInsight: findKeyInsight(analysisTopic),
       content: (sections[i]?.trim() || sections[sections.length - 1]?.trim() || "").slice(0, 500),
     }));
-
     const files = generateFiles(steps, patternDef, "Analyzed AI Response");
-
     return {
-      content: [
-        {
-          type: "text",
-          text: `Analyzed AI response and generated ${files.filter((f) => f.stepNumber > 0).length} thinking pattern files:\n\n${files
-            .filter((f) => f.stepNumber > 0)
-            .map((f) => `✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`)
-            .join("\n")}\n\nOutput directory: ${config.output.dir}`,
-        },
-      ],
+      content: [{
+        type: "text",
+        text: `Analyzed AI response and generated ${files.filter((f) => f.stepNumber > 0).length} thinking pattern files:\n\n${files.filter((f) => f.stepNumber > 0).map((f) => `✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`).join("\n")}`,
+      }],
     };
   },
 );
 
-// Tool: list_patterns
 server.tool(
   "list_patterns",
   "List all available thinking patterns with their steps.",
@@ -318,83 +278,58 @@ server.tool(
     const text = Object.entries(config.patterns)
       .map(([key, p]) => `${key}: ${p.label} (${p.steps.length} steps: ${p.steps.map((s) => s.label).join(", ")})`)
       .join("\n");
-    return {
-      content: [{ type: "text", text: `Available patterns:\n\n${text}` }],
-    };
+    return { content: [{ type: "text", text: `Available patterns:\n\n${text}` }] };
   },
 );
 
-// Tool: view_thinking_files
 server.tool(
   "view_thinking_files",
   "List all generated thinking pattern files in the output directory.",
-  {
-    directory: z
-      .string()
-      .optional()
-      .describe("Override the output directory (defaults to config setting)"),
-  },
+  { directory: z.string().optional().describe("Override the output directory (defaults to config or topic-derived)") },
   async ({ directory }) => {
     const config = loadConfig();
     const dir = directory || config.output.dir;
     try {
-      const files = readdirSync(dir)
-        .filter((f) => f.endsWith(".md") && f.startsWith("think"))
-        .sort();
+      const files = readdirSync(dir).filter((f) => f.endsWith(".md") && f.startsWith("think")).sort();
       return {
-        content: [
-          {
-            type: "text",
-            text: files.length > 0
-              ? `Generated thinking files in ${dir}:\n\n${files.map((f) => `- ${f}`).join("\n")}`
-              : `No thinking files found in ${dir}. Generate some first with generate_thinking_patterns.`,
-          },
-        ],
+        content: [{
+          type: "text",
+          text: files.length > 0 ? `Generated thinking files in ${dir}:\n\n${files.map((f) => `- ${f}`).join("\n")}` : `No thinking files found. Generate some first.`,
+        }],
       };
     } catch {
-      return {
-        content: [{ type: "text", text: `Directory not found: ${dir}` }],
-      };
+      return { content: [{ type: "text", text: `Directory not found: ${dir || '(dynamic — no output yet)'}` }] };
     }
   },
 );
 
-// Tool: get_thinking_file
 server.tool(
   "get_thinking_file",
   "Get the full content of a specific generated thinking file.",
   {
     fileName: z.string().describe("The thinking file name, e.g. 'think1.md' or 'think-context.md'"),
-    directory: z.string().optional().describe("Output directory (defaults to config)"),
+    directory: z.string().optional().describe("Output directory (defaults to config or topic-derived)"),
   },
   async ({ fileName, directory }) => {
     const config = loadConfig();
     const dir = directory || config.output.dir;
     try {
       const content = readFileSync(join(dir, fileName), "utf8");
-      return {
-        content: [{ type: "text", text: `--- ${fileName} ---\n\n${content}` }],
-      };
+      return { content: [{ type: "text", text: `--- ${fileName} ---\n\n${content}` }] };
     } catch {
-      return {
-        content: [{ type: "text", text: `File not found: ${join(dir, fileName)}` }],
-        isError: true,
-      };
+      return { content: [{ type: "text", text: `File not found: ${join(dir || '.', fileName)}` }], isError: true };
     }
   },
 );
 
-// Tool: get_config
 server.tool(
   "get_config",
   "Show the current thinking-patterns configuration.",
   {},
   async () => {
     const config = loadConfig();
-    const text = `defaultPattern: ${config.defaultPattern}\noutput dir: ${config.output.dir}\nfile prefix: ${config.output.filePrefix}\nnaming: ${config.output.naming}\npatterns: ${Object.keys(config.patterns).join(", ")}`;
-    return {
-      content: [{ type: "text", text: `Current configuration:\n\n${text}` }],
-    };
+    const text = `defaultPattern: ${config.defaultPattern}\noutput dir: ${config.output.dir || '(dynamic)'}\nfile prefix: ${config.output.filePrefix}\nnaming: ${config.output.naming}\npatterns: ${Object.keys(config.patterns).join(", ")}`;
+    return { content: [{ type: "text", text: `Current configuration:\n\n${text}` }] };
   },
 );
 
@@ -403,7 +338,7 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("thinking-patterns MCP server running on stdio");
+  console.error("thinking-patterns MCP server (nakprc) running on stdio");
 }
 
 main().catch((err) => {

@@ -1,0 +1,46 @@
+{
+  "name": "thinking-patterns",
+  "version": "1.1.0",
+  "author": "nakprc",
+  "description": "Generate sequential thinking pattern files to study and learn AI reasoning. Plug-and-play extension for Claude Code, Claude Desktop, Cursor, Windsurf, and any MCP-compatible LLM.",
+  "bin": "thinking-patterns",
+  "mcpServer": "mcp-server.mjs",
+  "configFile": "thinkingpatterns.nakprc.config.js",
+  "skill": ".nakprc/skills/tp.nakprc.md",
+  "installers": [
+    "claude-desktop",
+    "cursor",
+    "windsurf",
+    "vscode-continue",
+    "cline"
+  ],
+  "patterns": {
+    "reverse_engineer": {
+      "label": "Reverse Engineer AI Thinking",
+      "steps": ["context", "analysis", "synthesis", "conclusion"]
+    },
+    "guided": {
+      "label": "Guided Thinking",
+      "steps": ["observe", "question", "hypothesize", "test", "learn"]
+    },
+    "custom": {
+      "label": "Custom Pattern",
+      "steps": ["frame", "explore", "evaluate", "decide", "execute", "reflect"]
+    }
+  },
+  "output": {
+    "dir": "dynamic (topic-derived slug)",
+    "namingModes": ["numbered", "named", "datetime"],
+    "defaultNaming": "numbered",
+    "filePrefix": "think"
+  },
+  "mcpTools": [
+    "generate_thinking_patterns",
+    "analyze_ai_response",
+    "list_patterns",
+    "view_thinking_files",
+    "get_thinking_file",
+    "get_config"
+  ],
+  "license": "MIT"
+}

@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
 /**
- * thinking-patterns CLI
+ * thinking-patterns CLI — nakprc edition
  * Generate sequential thinking pattern files to study AI reasoning.
- * 
+ *
  * MIT License
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,12 +27,12 @@
 
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeFileSync, readFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, readFileSync, mkdirSync, readdirSync } from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
 
-// ── Minimal CLI parser (no dependencies) ──────────────
+// ── Minimal CLI parser (no dependencies) ──────
 
 function parseArgs(argv) {
   const args = { _: [], config: null, pattern: null }
@@ -56,12 +56,11 @@ function parseArgs(argv) {
   return args
 }
 
-// ── Config loader ───────────────────────────────────────
+// ── Config loader ──
 
 async function loadConfig(configPath) {
-  // Default config
   const DEFAULTS = {
-    output: { dir: './thinking-patterns', filePrefix: 'think', naming: 'numbered', includeMetadata: true, includeSummary: true, summaryLength: 'short', includeVisual: false, fileExtension: 'md' },
+    output: { dir: null, filePrefix: 'think', naming: 'numbered', includeMetadata: true, includeSummary: true, summaryLength: 'short', includeVisual: false, fileExtension: 'md' },
     defaultPattern: 'reverse_engineer',
     patterns: {
       reverse_engineer: { label: 'Reverse Engineer AI Thinking', description: 'Extract thinking steps from an AI response', steps: [{ id: 'context', label: 'Context & Framing', desc: 'How the AI frames the problem' }, { id: 'analysis', label: 'Analysis', desc: 'How the AI breaks down the problem' }, { id: 'synthesis', label: 'Synthesis', desc: 'How the AI combines insights' }, { id: 'conclusion', label: 'Conclusion', desc: 'How the AI reaches conclusions' }] },
@@ -74,11 +73,10 @@ async function loadConfig(configPath) {
 
   let userConfig = {}
   function parseConfig(raw) {
-    // Strip comments and export default, keep only the object
     let code = raw
-      .replace(/\/\*[\s\S]*?\*\//g, '')        // block comments
-      .replace(/\/\/.*$/gm, '')                   // line comments
-      .replace(/\s*export\s+default\s*/g, '')    // export default
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+      .replace(/\s*export\s+default\s*/g, '')
       .trim()
     const fn = new Function('return (' + code + ')')
     return fn()
@@ -89,14 +87,12 @@ async function loadConfig(configPath) {
     try { userConfig = parseConfig(readFileSync(join(root, 'thinkingpatterns.nakprc.config.js'), 'utf8')) } catch { /* use defaults */ }
   }
 
-  // Deep merge
   const merged = { ...DEFAULTS, ...userConfig }
   merged.output = { ...DEFAULTS.output, ...(userConfig.output || {}) }
   merged.patterns = { ...DEFAULTS.patterns, ...(userConfig.patterns || {}) }
   merged.llm = { ...DEFAULTS.llm, ...(userConfig.llm || {}) }
   merged.research = { ...DEFAULTS.research, ...(userConfig.research || {}) }
 
-  // Merge patterns if user provided any
   if (userConfig.patterns) {
     for (const key of Object.keys(userConfig.patterns)) {
       if (!merged.patterns[key]) {
@@ -110,7 +106,22 @@ async function loadConfig(configPath) {
   return merged
 }
 
-// ── Patterns ─────────────────────────────────────────────
+// ── Dynamic output dir from topic ──
+
+function topicToSlug(topic) {
+  return topic
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60) || 'thinking'
+}
+
+function resolveOutputDir(config, topic) {
+  if (config.output?.dir) return config.output.dir
+  return `./${topicToSlug(topic)}`
+}
+
+// ── Patterns ──
 
 function describeAIAction(stepId) {
   const map = {
@@ -143,7 +154,7 @@ function findKeyInsight(content, stepId) {
   }
   const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 40)
   if (sentences.length > 0) return sentences[0].trim() + '.'
-  return content.slice(0, 200) + '...'
+  return content.slice(0, 200) + '..'
 }
 
 function generateStepContent(stepId, topic, index, total) {
@@ -179,7 +190,6 @@ function generateStepContent(stepId, topic, index, total) {
 
   if (templates[stepId]) return templates[stepId][index % templates[stepId].length]
 
-  // Generic
   const intros = [
     `Thinking through this ${stepId} step for ${topic}:`,
     `In the ${stepId} phase of reasoning about ${topic}:`,
@@ -188,7 +198,7 @@ function generateStepContent(stepId, topic, index, total) {
   return `${intros[index % intros.length]} This step reveals how AI reasoning progresses through structured stages.`
 }
 
-// ── Generator ─────────────────────────────────────────────
+// ── Generator ──
 
 function renderStep(step, index, total, pattern, config) {
   return `---
@@ -222,7 +232,7 @@ ${step.content}
 }
 
 function generateFiles(steps, pattern, config, topic) {
-  const outputDir = config.output?.dir || config.outputDir || './thinking-patterns'
+  const outputDir = resolveOutputDir(config, topic)
   const filePrefix = config.output?.filePrefix || 'think'
   const naming = config.output?.naming || 'numbered'
   const fileExtension = config.output?.fileExtension || 'md'
@@ -249,20 +259,20 @@ function generateFiles(steps, pattern, config, topic) {
   }
 
   // Index
-  const indexContent = `# Thinking Patterns\n\n` +
-    `Topic: ${topic}\n` +
+  const indexContent = `# Thinking Patterns: ${topic}\n\n` +
     `Generated: ${new Date().toISOString()}\n` +
     `Pattern: ${pattern.label}\n` +
+    `Output: ${outputDir}\n` +
     `Steps: ${steps.length}\n\n` +
     `## Files\n\n` +
     files.filter(f => f.stepNumber > 0).map((f) => `- [${f.name}](./${f.name}) — Step ${f.stepNumber}: ${f.step}`).join('\n') +
-    `\n\n---\n*Generated by thinking-patterns*\n`
+    `\n\n---\n*Generated by thinking-patterns — nakprc*\n`
   writeFileSync(join(outputDir, `index.${ext}`), indexContent, 'utf8')
 
   return files
 }
 
-// ── Sample AI response ───────────────────────────────
+// ── Sample AI response ──
 
 const SAMPLE_RESPONSE = `Quantum computing represents a fundamental shift in how we process information. Unlike classical computers that use bits (0 or 1), quantum computers use quantum bits or qubits, which can exist in superposition — representing both 0 and 1 simultaneously.
 
@@ -274,7 +284,7 @@ The challenges are significant. Qubits are extremely fragile and prone to decohe
 
 Despite these challenges, major progress is being made. IBM, Google, and others have built increasingly powerful quantum processors. The race is on for "quantum advantage" — the point where quantum computers solve practical problems faster than the best classical algorithms.`
 
-// ── CLI Commands ────────────────────────────────────
+// ── CLI Commands ──
 
 async function cmdGenerate(args, config) {
   const topic = args._.length > 0 ? args._.join(' ') : 'general reasoning'
@@ -286,14 +296,16 @@ async function cmdGenerate(args, config) {
     return
   }
 
-  console.log(`\n🧠 thinking-patterns`)
-  console.log(`   Pattern: ${pattern.label}`)
-  console.log(`   Topic:   ${topic}\n`)
+  const outputDir = resolveOutputDir(config, topic)
 
-  // Use sample response as "AI input"
+  console.log(`\n🧠 thinking-patterns (nakprc)`)
+  console.log(`   Pattern:  ${pattern.label}`)
+  console.log(`   Topic:    ${topic}`)
+  console.log(`   Output:   ${outputDir}`)
+  console.log(`   Prefix:   ${config.output?.filePrefix || 'think'}1, think2, think3...\n`)
+
   const input = args._.length > 0 ? args._.join(' ') : SAMPLE_RESPONSE
 
-  // Generate steps
   const steps = pattern.steps.map((step, i) => ({
     ...step,
     whatDone: describeAIAction(step.id),
@@ -308,7 +320,7 @@ async function cmdGenerate(args, config) {
   files.forEach((f) => {
     if (f.stepNumber > 0) console.log(`   ✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`)
   })
-  console.log(`\n📂 Output directory: ${config.output.dir}\n`)
+  console.log(`\n📁 Output directory: ${outputDir}\n`)
 }
 
 async function cmdAnalyze(args, config) {
@@ -322,9 +334,10 @@ async function cmdAnalyze(args, config) {
     return
   }
 
+  const outputDir = resolveOutputDir(config, 'analyzed-response')
+
   console.log(`\n🔍 Analyzing AI response...\n`)
 
-  // Simulate reverse engineering — split input into logical sections
   const sections = input.split(/\n\n+/).filter((s) => s.trim())
   const steps = pattern.steps.map((step, i) => {
     const section = sections[i] || sections[sections.length - 1] || ''
@@ -333,7 +346,7 @@ async function cmdAnalyze(args, config) {
       whatDone: describeAIAction(step.id),
       thinkingPattern: generateThinkingPattern(step.id, input.slice(0, 100)),
       keyInsight: section.split(/[.!?]+/).filter((s) => s.trim().length > 40)[0]?.trim() + '.' || 'Key insight from analysis.',
-      content: section.trim().slice(0, 500) + (section.trim().length > 500 ? '...' : ''),
+      content: section.trim().slice(0, 500) + (section.trim().length > 500 ? '..' : ''),
     }
   })
 
@@ -343,7 +356,7 @@ async function cmdAnalyze(args, config) {
   files.forEach((f) => {
     if (f.stepNumber > 0) console.log(`   ✅ ${f.name} — Step ${f.stepNumber}: ${f.step}`)
   })
-  console.log(`\n📂 Output directory: ${config.output.dir}\n`)
+  console.log(`\n📁 Output directory: ${outputDir}\n`)
 }
 
 async function cmdListPatterns(args, config) {
@@ -358,13 +371,14 @@ async function cmdListPatterns(args, config) {
 }
 
 async function cmdConfig(args, config) {
+  const outputDir = config.output?.dir || '(dynamic — derived from topic)'
   console.log(`\n⚙️  Current Configuration\n` + '═'.repeat(40) + '\n')
   console.log(`  Default pattern: ${config.defaultPattern}`)
-  console.log(`  Output dir:      ${config.output.dir}`)
-  console.log(`  File prefix:     ${config.output.filePrefix}`)
-  console.log(`  Naming:          ${config.output.naming}`)
-  console.log(`  File extension:  ${config.output.fileExtension}`)
-  console.log(`  LLM enabled:     ${config.llm.enabled}`)
+  console.log(`  Output dir:      ${outputDir}`)
+  console.log(`  File prefix:     ${config.output?.filePrefix || 'think'}`)
+  console.log(`  Naming:          ${config.output?.naming || 'numbered'}`)
+  console.log(`  File extension:  ${config.output?.fileExtension || 'md'}`)
+  console.log(`  LLM enabled:     ${config.llm?.enabled}`)
   console.log(`\n  Patterns (${Object.keys(config.patterns).length}):\n`)
   for (const key of Object.keys(config.patterns)) {
     console.log(`    - ${key}: ${config.patterns[key].label}`)
@@ -377,7 +391,7 @@ async function cmdDemo(args, config) {
   await cmdGenerate({ _: [SAMPLE_RESPONSE] }, config)
 }
 
-// ── Main ────────────────────────────────────────────
+// ── Main ──
 
 async function main() {
   const args = parseArgs(process.argv)
@@ -393,7 +407,7 @@ async function main() {
     demo: cmdDemo,
     help: () => {
       console.log(`
-🧠 thinking-patterns v1.0.0
+🧠 thinking-patterns (nakprc) v1.1.0
 Generate sequential thinking pattern files to study AI reasoning.
 
 Usage:
@@ -406,12 +420,17 @@ Usage:
 
 Options:
   --config <path>   Path to config file (default: ./thinkingpatterns.nakprc.config.js)
-  --pattern <name>  Override default pattern
+  --pattern <name>  Override default pattern (reverse_engineer | guided | custom)
 
 Patterns:
   reverse_engineer  Extract thinking steps from any AI response
   guided            Structured scientific reasoning pattern
   custom            User-defined thinking steps
+
+Output:
+  Files use numbered prefix: 1think.md, 2think.md, 3think.md, ...
+  Output directory is dynamic — derived from the topic name (sanitized slug).
+  Override with config.output.dir.
 
 Examples:
   thinking-patterns generate "explain machine learning"

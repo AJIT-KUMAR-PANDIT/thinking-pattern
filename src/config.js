@@ -1,5 +1,6 @@
 /**
  * Config loader — merges built-in defaults with user overrides.
+ * Part of thinking-patterns — nakprc edition.
  */
 
 import { readFileSync } from 'node:fs'
@@ -11,9 +12,9 @@ const root = join(__dirname, '..')
 
 const DEFAULTS = {
   output: {
-    dir: './thinking-patterns',
+    dir: null,             // null = derive from topic slug
     filePrefix: 'think',
-    naming: 'numbered',
+    naming: 'numbered',    // 'numbered' | 'named' | 'datetime'
     includeMetadata: true,
     includeSummary: true,
     summaryLength: 'short',
@@ -60,9 +61,8 @@ const DEFAULTS = {
     enabled: false,
     provider: 'openai',
     model: 'gpt-4o',
-    systemPrompt:
-      'You are a thinking pattern generator. Your job is to simulate how an AI would reason through a problem step by step.',
-    perStepPrompt: 'Based on the previous thinking step, generate the next step in the reasoning chain.',
+    systemPrompt: 'You are a thinking pattern generator.',
+    perStepPrompt: 'Based on the previous thinking step, generate the next step.',
     maxTokens: 2000,
     temperature: 0.7,
   },
@@ -75,7 +75,6 @@ const DEFAULTS = {
   },
 }
 
-/** Deep merge b into a (b wins on conflict) */
 function merge(a, b) {
   const out = { ...a }
   for (const key of Object.keys(b)) {
@@ -88,19 +87,15 @@ function merge(a, b) {
   return out
 }
 
-/** Load config — user file overrides built-in defaults */
 export function loadConfig(configPath) {
   let userConfig = {}
   if (configPath) {
     try {
       const raw = readFileSync(configPath, 'utf8')
-      // Parse JS config: strip export default, evaluate as function
       const code = raw.replace(/export\s+default\s*/, '')
       const fn = new Function(code + '; return fn()')
       userConfig = fn()
-    } catch {
-      // fall through to defaults
-    }
+    } catch { /* fall through to defaults */ }
   }
   return merge(DEFAULTS, userConfig)
 }

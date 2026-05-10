@@ -1,8 +1,14 @@
-# thinking-patterns
+# thinking-patterns (nakprc)
 
 Generate sequential thinking pattern files to study and learn AI reasoning patterns.
 
 🧠 See each AI reasoning step as a numbered file: `1think.md`, `2think.md`, `3think.md`...
+
+## Quick Install
+
+```bash
+npm i llm-thinking-patterns-nakprc
+```
 
 ## Quick Start
 
@@ -22,10 +28,10 @@ npx thinking-patterns list-patterns
 
 ## Output
 
-Each run creates sequential markdown files in `./thinking-patterns/`:
+Each run creates a **topic-derived output directory** (dynamic slug) with numbered files:
 
 ```
-thinking-patterns/
+machine-learning/           ← derived from "machine learning"
 ├── 1think.md   # Context & Framing
 ├── 2think.md   # Analysis
 ├── 3think.md   # Synthesis
@@ -39,17 +45,14 @@ Everything is controlled by `thinkingpatterns.nakprc.config.js`:
 
 ```js
 export default {
-  // Output settings
   output: {
-    dir: './thinking-patterns',
+    dir: null,                // null = dynamic (derived from topic)
     filePrefix: 'think',
-    naming: 'numbered',    // 'numbered' | 'named' | 'datetime'
+    naming: 'numbered',       // 'numbered' | 'named' | 'datetime'
   },
 
-  // Default thinking pattern
   defaultPattern: 'reverse_engineer',
 
-  // Thinking patterns
   patterns: {
     reverse_engineer: {
       label: 'Reverse Engineer AI Thinking',
@@ -72,7 +75,6 @@ export default {
     },
   },
 
-  // Optional: real LLM integration for each thinking step
   llm: {
     enabled: false,
     provider: 'openai',
@@ -84,7 +86,7 @@ export default {
 ## CLI Commands
 
 | Command | Description |
-|---------|-------------|
+|---------|------|
 | `generate <topic>` | Generate thinking patterns for a topic |
 | `analyze <file>` | Reverse-engineer thinking from an AI response file |
 | `list-patterns` | List all available thinking patterns |
@@ -97,6 +99,44 @@ export default {
 - **guided** — Structured scientific reasoning (observe → question → hypothesize → test → learn)
 - **custom** — Define your own thinking steps
 
+## Output Directory Behavior
+
+By default, the output directory is **dynamic** — derived from the topic name:
+
+| Topic | Output Directory |
+|-------|-------|
+| "machine learning" | `./machine-learning/` |
+| "debug memory leak" | `./debug-memory-leak/` |
+| "explain quantum" | `./explain-quantum/` |
+
+Override with `config.output.dir` for a fixed directory.
+
+## File Naming
+
+Files use numbered prefix by default:
+
+| Naming Mode | Example |
+|-------------|------|
+| `numbered` (default) | `1think.md`, `2think.md`, `3think.md` |
+| `named` | `think-context.md`, `think-analysis.md` |
+| `datetime` | `think-2026-05-11T10-00-00-context.md` |
+
+## Plug & Play Extension
+
+One-command setup for Claude Code, Claude Desktop, Cursor, Windsurf, and any MCP-compatible LLM.
+
+```bash
+# Auto-detect your IDE and configure
+npx tp-setup auto
+
+# Or specify your IDE
+npx tp-setup claude-desktop
+npx tp-setup cursor
+npx tp-setup windsurf
+```
+
+See [`.nakprc/INSTALL.md`](.nakprc/INSTALL.md) for full installation guides for each platform.
+
 ## MCP Server (for LLMs)
 
 Connect this to any MCP-compatible client (Claude Desktop, Cursor, Windsurf, etc.) so LLMs can automatically generate thinking patterns.
@@ -108,7 +148,7 @@ Connect this to any MCP-compatible client (Claude Desktop, Cursor, Windsurf, etc
   "mcpServers": {
     "thinking-patterns": {
       "command": "node",
-      "args": ["/path/to/thinking-patterns/mcp-server.mjs"]
+      "args": ["/path/to/thinking-pattern/mcp-server.mjs"]
     }
   }
 }
@@ -117,25 +157,13 @@ Connect this to any MCP-compatible client (Claude Desktop, Cursor, Windsurf, etc
 **Tools exposed to connected LLMs:**
 
 | Tool | Description |
-|------|-------|
+|------|--|
 | `generate_thinking_patterns` | Generate sequential files (1think.md, 2think.md...) for any topic |
 | `analyze_ai_response` | Reverse-engineer thinking from any AI response text |
-| `list_patterns` | List all available thinking patterns |
+| `list_patterns` | List all available patterns |
 | `view_thinking_files` | List all generated thinking files |
 | `get_thinking_file` | View content of a specific thinking file |
 | `get_config` | Show current configuration |
-
-**Claude Desktop setup example:**
-```json
-{
-  "mcpServers": {
-    "thinking-patterns": {
-      "command": "node",
-      "args": ["/Users/you/thinking-patterns/mcp-server.mjs"]
-    }
-  }
-}
-```
 
 ## Research
 

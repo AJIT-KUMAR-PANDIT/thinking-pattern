@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "thinking-patterns": {
+      "command": "node",
+      "args": ["/Users/you/thinking-pattern/mcp-server.mjs"],
+      "env": {}
+    }
+  }
+}

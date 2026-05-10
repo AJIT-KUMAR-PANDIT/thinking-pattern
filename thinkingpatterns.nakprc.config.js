@@ -4,7 +4,7 @@
 export default {
   // ─── Output ───────────────────────────────────────────────
   output: {
-    dir: './thinking-patterns',
+    dir: null,
     filePrefix: 'think',
     naming: 'numbered',       // 'numbered' | 'named' | 'datetime'
     includeMetadata: true,
